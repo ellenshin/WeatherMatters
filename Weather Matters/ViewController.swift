@@ -8,8 +8,10 @@
 
 import UIKit
 import MapKit
+import CalendarView
+import SwiftMoment
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, CLLocationManagerDelegate {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, CLLocationManagerDelegate, CalendarViewDelegate {
 
     @IBOutlet weak var todayWeatherIcon: UIImageView!
     @IBOutlet weak var mapPin: UIImageView!
@@ -19,7 +21,19 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     @IBOutlet weak var todayLbl: UILabel!
     @IBOutlet weak var dateLbl: UILabel!
     @IBOutlet weak var todayTempLbl: UILabel!
-
+    @IBOutlet weak var calendar: CalendarView!
+    @IBOutlet weak var currentPrecipLbl: UILabel!
+    @IBOutlet weak var currentHumidLbl: UILabel!
+    @IBOutlet weak var currentWindLbl: UILabel!
+    @IBOutlet weak var currentSunriseLbl: UILabel!
+    @IBOutlet weak var currentSunsetLbl: UILabel!
+    @IBOutlet weak var currentSummaryLbl: UILabel!
+    @IBOutlet weak var precipTag: UILabel!
+    @IBOutlet weak var humidTag: UILabel!
+    @IBOutlet weak var windTag: UILabel!
+    @IBOutlet weak var sunriseTag: UILabel!
+    @IBOutlet weak var sunsetTag: UILabel!
+    
     var sevenDays: NextSevenDays!
     var locationManager = CLLocationManager()
     var location: CLLocationCoordinate2D!
@@ -40,10 +54,28 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
     }
     
+    func calendarDidSelectDate(date: Moment) {
+        title = date.format("MMMM d, yyyy")
+    }
+    
+    func calendarDidPageToDate(date: Moment) {
+        title = date.format("MMMM d, yyyy")
+    }
+
+    @IBAction func locationSearchBtn(sender: AnyObject) {
+        
+    }
+    
     func designateDataSource(notif: AnyObject) {
         
         tableView.dataSource = self
-        loadTodayData()
+        loadTodayData(0)
+        precipTag.hidden = false
+        humidTag.hidden = false
+        sunriseTag.hidden = false
+        sunsetTag.hidden = false
+        currentSummaryLbl.hidden = false
+        windTag.hidden = false
         tableView.reloadData()
     }
     
@@ -66,17 +98,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             
             let placeArray = placemarks as [CLPlacemark]!
             
-            // Place details
             var placeMark: CLPlacemark!
             placeMark = placeArray?[0]
             
-            // Street address
             if let state = placeMark.addressDictionary?["State"] as? String
             {
                 self.stateLbl.text = state
             }
             
-            // City
             if let city = placeMark.addressDictionary?["City"] as? String
             {
                 self.cityLbl.text = city
@@ -101,9 +130,9 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
     }
     
-    func loadTodayData() {
+    func loadTodayData(nthDay: Int) {
         dispatch_async(dispatch_get_main_queue()) {
-            let todayDay = self.sevenDays.getNthDay(0)
+            let todayDay = self.sevenDays.getNthDay(nthDay)
             self.todayWeatherIcon.image = todayDay.weatherImg
             var today = todayDay.date.componentsSeparatedByCharactersInSet(NSCharacterSet.decimalDigitCharacterSet()).joinWithSeparator("")
             today = today.stringByReplacingOccurrencesOfString(" ", withString: "")
@@ -114,13 +143,23 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             date = date.stringByReplacingOccurrencesOfString(" ", withString: "")
             self.dateLbl.text = date
             self.todayTempLbl.text = todayDay.temp
+            self.currentPrecipLbl.text = todayDay.precipitation
+            self.currentHumidLbl.text = todayDay.humidity
+            self.currentWindLbl.text = todayDay.wind
+            self.currentSunsetLbl.text = todayDay.sunset
+            self.currentSunriseLbl.text = todayDay.sunrise
+            self.currentSummaryLbl.text = todayDay.summary
             self.tableView.reloadData()
         }
 
     }
     
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        loadTodayData(indexPath.row)
+    }
+    
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 6
+        return 7
     }
     
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
@@ -131,13 +170,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         if let cell = tableView.dequeueReusableCellWithIdentifier("NextDayCell") as? NextDayCell {
             
-            let day = sevenDays.getNthDay(indexPath.row + 1)
+            let day = sevenDays.getNthDay(indexPath.row)
             cell.configureCell(day)
             return cell
         } else {
             return NextDayCell()
         }
     }
+
 
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return 1

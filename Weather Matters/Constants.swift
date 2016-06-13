@@ -12,3 +12,9 @@ import MapKit
 typealias downloadComplete = () -> ()
 let degreeSign = NSString(format:"%@", "\u{00B0}") as String
 var location: CLLocationCoordinate2D!
+var dateFormatter = NSDateFormatter()
+
+func toReadableTime(date: NSDate) -> String {
+    dateFormatter.dateFormat = "h:mm a"
+    return dateFormatter.stringFromDate(date)
+}

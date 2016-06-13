@@ -13,7 +13,6 @@ import ForecastIO
 class NextSevenDays {
     
     private var _days: [Day]?
-    var dateFormatter = NSDateFormatter()
     let cal: NSCalendar = NSCalendar(calendarIdentifier: NSCalendarIdentifierGregorian)!
     let forecastIOClient = APIClient(apiKey: "a2d38be2948cf8e5bb3aef11f7e047c2")
     let longitude: Double!
@@ -27,7 +26,7 @@ class NextSevenDays {
     
     func getDates() {
         var currentDate = NSDate()
-        for index in 0..<7 {
+        for index in 0..<8 {
             if index == 0 {
             let date = _days![index]
             dateFormatter.dateFormat = "EEEE MM/dd"
@@ -55,11 +54,18 @@ class NextSevenDays {
                 if let currentForecast = currentForecast {
                     if let dailyDict = currentForecast.daily {
                         if let data = dailyDict.data {
-                            for index in 0..<7 {
-                                let tempMin: Int = Int(round(data[index].temperatureMin!))
-                                let tempMax: Int = Int(round(data[index].temperatureMax!))
-                                let image = UIImage(named: (data[index].icon?.rawValue)!)!
-                                let day = Day(date: "", temp: "\(tempMax)\(degreeSign) / \(tempMin)\(degreeSign)", image: image)
+                            for index in 0..<8 {
+                                let specificDate = data[index]
+                                let tempMin: Int = Int(round(specificDate.temperatureMin!))
+                                let tempMax: Int = Int(round(specificDate.temperatureMax!))
+                                let image = UIImage(named: (specificDate.icon?.rawValue)!)!
+                                let precipitation = "\(Int(specificDate.precipProbability!*100))%"
+                                let humidity = "\(Int(specificDate.humidity!*100))%"
+                                let wind: String = "\(specificDate.windSpeed!) mph"
+                                let sunrise = toReadableTime(specificDate.sunriseTime!)
+                                let sunset = toReadableTime(specificDate.sunsetTime!)
+                                let summary = specificDate.summary!
+                                let day = Day(date: "", temp: "\(tempMax)\(degreeSign) / \(tempMin)\(degreeSign)", image: image, wind: wind, humidity: humidity, precipitation: precipitation, sunrise: sunrise, sunset: sunset, summary: summary)
                                 self._days?.append(day)
                             }
                             completed()

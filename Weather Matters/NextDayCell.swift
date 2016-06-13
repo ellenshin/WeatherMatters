@@ -25,5 +25,5 @@ class NextDayCell: UITableViewCell {
         weatherImg.image = day.weatherImg
         tempLbl.text = day.temp
     }
-
+    
 }
