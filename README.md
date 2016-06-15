@@ -1,6 +1,6 @@
 # WeatherMatters
 
-
+![alt tag](https://github.com/ellenshin/WeatherMatters/blob/master/IMG_0529.PNG)
 WeatherMatters is an ios mobile application that informs the users about today's weather within one page.
 Users are able to search for any cities in the world by tapping on the location label on the top left.
 By tapping on the location pin on the top left, the users are able to view weather information of their current location.
