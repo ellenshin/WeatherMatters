@@ -8,10 +8,8 @@
 
 import UIKit
 import MapKit
-import CalendarView
-import SwiftMoment
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, CLLocationManagerDelegate, CalendarViewDelegate {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, CLLocationManagerDelegate {
 
     @IBOutlet weak var todayWeatherIcon: UIImageView!
     @IBOutlet weak var mapPin: UIImageView!
@@ -21,27 +19,27 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     @IBOutlet weak var todayLbl: UILabel!
     @IBOutlet weak var dateLbl: UILabel!
     @IBOutlet weak var todayTempLbl: UILabel!
-    @IBOutlet weak var calendar: CalendarView!
     @IBOutlet weak var currentPrecipLbl: UILabel!
     @IBOutlet weak var currentHumidLbl: UILabel!
     @IBOutlet weak var currentWindLbl: UILabel!
     @IBOutlet weak var currentSunriseLbl: UILabel!
     @IBOutlet weak var currentSunsetLbl: UILabel!
     @IBOutlet weak var currentSummaryLbl: UILabel!
-    @IBOutlet weak var precipTag: UILabel!
-    @IBOutlet weak var humidTag: UILabel!
-    @IBOutlet weak var windTag: UILabel!
-    @IBOutlet weak var sunriseTag: UILabel!
-    @IBOutlet weak var sunsetTag: UILabel!
+    @IBOutlet weak var nowTempLbl: UILabel!
+    
+    
     
     var sevenDays: NextSevenDays!
     var locationManager = CLLocationManager()
-    var location: CLLocationCoordinate2D!
+    var searchingOtherLocation = false
     
     @IBOutlet weak var calendarImg: UIImageView!
     override func viewDidLoad() {
-        super.viewDidLoad()
         
+        dispatch_async(dispatch_get_main_queue()) {
+            self.performSegueWithIdentifier("LoadingVC", sender: self)
+        }
+        super.viewDidLoad()
         todayWeatherIcon.image = todayWeatherIcon.image?.invertedImage()
         mapPin.image = mapPin.image?.invertedImage()
         calendarImg.image = calendarImg.image?.invertedImage()
@@ -49,34 +47,45 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         tableView.delegate = self
         tableView.dataSource = nil
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.designateDataSource(_:)), name: "locationDataLoaded", object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.designateDataSource), name: "locationDataLoaded", object: nil)
+         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.undesignateDataSource), name: "undesignateDataSource", object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.otherLocationLoaded), name: "otherLocationLoaded", object: nil)
        
         
     }
     
-    func calendarDidSelectDate(date: Moment) {
-        title = date.format("MMMM d, yyyy")
-    }
-    
-    func calendarDidPageToDate(date: Moment) {
-        title = date.format("MMMM d, yyyy")
+    @IBAction func calendarBtnPressed(sender: AnyObject) {
+        loadTodayData(0)
     }
 
-    @IBAction func locationSearchBtn(sender: AnyObject) {
-        
+    @IBAction func currentLocBtnPressed(sender: AnyObject) {
+        if searchingOtherLocation == false {
+            return
+        } else {
+            location = currentLoc
+            NSNotificationCenter.defaultCenter().postNotification(NSNotification(name: "undesignateDataSource", object: nil))
+            let selectedCity = currentCity!
+            selectedCity.downloadDetails { () -> () in
+                NSNotificationCenter.defaultCenter().postNotification(NSNotification(name: "otherLocationLoaded", object: nil))
+                searchedCity = selectedCity
+                self.searchingOtherLocation = false
+            }
+        }
     }
     
-    func designateDataSource(notif: AnyObject) {
+    func undesignateDataSource() {
+        
+        tableView.dataSource = nil
+    }
+    
+    func designateDataSource() {
         
         tableView.dataSource = self
         loadTodayData(0)
-        precipTag.hidden = false
-        humidTag.hidden = false
-        sunriseTag.hidden = false
-        sunsetTag.hidden = false
-        currentSummaryLbl.hidden = false
-        windTag.hidden = false
-        tableView.reloadData()
+        dispatch_async(dispatch_get_main_queue()) {
+            self.tableView.reloadData()
+            NSNotificationCenter.defaultCenter().postNotification(NSNotification(name: "finishedLoading", object: nil))
+        }
     }
     
     func updateLocation() {
@@ -86,30 +95,60 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             locationManager.startUpdatingLocation()
         } else {
             locationManager.requestWhenInUseAuthorization()
+            locationManager.startUpdatingLocation()
         }
     }
     
+    func getOtherCityAndState() {
+        self.stateLbl.text = "\(searchedCity!.state), \(searchedCity!.country)"
+        self.cityLbl.text = searchedCity!.city
+    }
+    
     func getCityAndState() {
-        let geoCoder = CLGeocoder()
-        let location = CLLocation(latitude: self.location.latitude, longitude: self.location.longitude)
-        geoCoder.reverseGeocodeLocation(location)
-        {
-            (placemarks, error) -> Void in
-            
-            let placeArray = placemarks as [CLPlacemark]!
-            
-            var placeMark: CLPlacemark!
-            placeMark = placeArray?[0]
-            
-            if let state = placeMark.addressDictionary?["State"] as? String
+        if searchingOtherLocation == false {
+            let geoCoder = CLGeocoder()
+            let loc = CLLocation(latitude: location.latitude, longitude: location.longitude)
+            currentLoc = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+            geoCoder.reverseGeocodeLocation(loc)
             {
-                self.stateLbl.text = state
+                (placemarks, error) -> Void in
+                
+                let placeArray = placemarks as [CLPlacemark]!
+                
+                var placeMark: CLPlacemark!
+                placeMark = placeArray?[0]
+                
+                if let state = placeMark.addressDictionary?["State"] as? String
+                {
+                    if let country = placeMark.addressDictionary?["Country"] as? String {
+                        self.stateLbl.text = "\(state), \(country)"
+                    }
+                }
+                
+                if let city = placeMark.addressDictionary?["City"] as? String
+                {
+                    self.cityLbl.text = city
+                    currentCity = City(loc: "\(self.cityLbl.text!), \(self.stateLbl.text!)")
+
+                }
             }
-            
-            if let city = placeMark.addressDictionary?["City"] as? String
-            {
-                self.cityLbl.text = city
-            }
+        } else {
+            getOtherCityAndState()
+        }
+    }
+    
+    func otherLocationLoaded() {
+        searchingOtherLocation = true
+        loadSevenDays()
+        dispatch_async(dispatch_get_main_queue()) {
+            self.tableView.reloadData()
+        }
+    }
+    
+    func loadSevenDays() {
+        sevenDays = NextSevenDays(long: location.longitude, lat: location.latitude)
+        sevenDays.generateNewData { () -> () in
+            self.sevenDays.getDates()
         }
     }
     
@@ -117,13 +156,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         if location == nil {
             let locValue:CLLocationCoordinate2D = manager.location!.coordinate
             location = locValue
-            print(location.longitude)
-            print(location.latitude)
-            sevenDays = NextSevenDays(long: location.longitude, lat: location.latitude)
-            self.getCityAndState()
-            sevenDays.generateNewData { () -> () in
-                self.sevenDays.getDates()
-            }
+            loadSevenDays()
         } else {
             return
         }
@@ -132,6 +165,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func loadTodayData(nthDay: Int) {
         dispatch_async(dispatch_get_main_queue()) {
+            self.getCityAndState()
             let todayDay = self.sevenDays.getNthDay(nthDay)
             self.todayWeatherIcon.image = todayDay.weatherImg
             var today = todayDay.date.componentsSeparatedByCharactersInSet(NSCharacterSet.decimalDigitCharacterSet()).joinWithSeparator("")
@@ -149,7 +183,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             self.currentSunsetLbl.text = todayDay.sunset
             self.currentSunriseLbl.text = todayDay.sunrise
             self.currentSummaryLbl.text = todayDay.summary
-            self.tableView.reloadData()
+            self.nowTempLbl.text = nowTemp
+            dispatch_async(dispatch_get_main_queue()) {
+                self.tableView.reloadData()
+            }
         }
 
     }
@@ -163,7 +200,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
-        return 79.0
+        return 65.0
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {

@@ -1,18 +1,15 @@
 PODS:
-  - CalendarView (1.1.2):
-    - SwiftMoment (~> 0.1)
+  - Alamofire (3.4.0)
   - ForecastIO (1.6.1)
-  - SwiftMoment (0.4)
 
 DEPENDENCIES:
-  - CalendarView
+  - Alamofire (~> 3.4)
   - ForecastIO
 
 SPEC CHECKSUMS:
-  CalendarView: 35d51b70586213604edec22a585d105273f6e191
+  Alamofire: c19a627cefd6a95f840401c49ab1f124e07f54ee
   ForecastIO: fa5ef84db6414b200bbd7a6b5f27669f394eadc9
-  SwiftMoment: e751c44be03a183fa6c949426d9473d26a66ef29
 
-PODFILE CHECKSUM: 3259e31b76fc91c0c309c0e653402006d0cdbeb5
+PODFILE CHECKSUM: 6a296469eb6ff233e2ae34a1948bb4a838d92a1b
 
 COCOAPODS: 1.0.1

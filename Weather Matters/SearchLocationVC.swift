@@ -7,20 +7,19 @@
 //
 
 import UIKit
+import Alamofire
+import MapKit
 
 class SearchLocationVC: UIViewController, UISearchBarDelegate, UITableViewDelegate, UITableViewDataSource {
 
     @IBOutlet weak var searchBar: UISearchBar!
     @IBOutlet weak var searchTableView: UITableView!
     
-    var cities: [City]!
-    var searchedCities: [City]!
-    var inSearchMode = false
+    var cities: [String]!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        cities = [City]()
-        searchedCities = [City]()
-        inSearchMode = false
+        cities = [String]()
         
         searchBar.delegate = self
         searchBar.showsCancelButton = true
@@ -30,36 +29,34 @@ class SearchLocationVC: UIViewController, UISearchBarDelegate, UITableViewDelega
         searchTableView.delegate = self
         searchTableView.dataSource = self
         
-        parseInCity()
     }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if inSearchMode {
-            return searchedCities.count
-        }
         return cities.count
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        
+        NSNotificationCenter.defaultCenter().postNotification(NSNotification(name: "undesignateDataSource", object: nil))
+        let selectedCity = City(loc: cities[indexPath.row])
+        selectedCity.downloadDetails { () -> () in
+            let loc = CLLocationCoordinate2D(latitude: selectedCity.lat, longitude: selectedCity.long)
+            otherLoc = loc
+            location = otherLoc
+            NSNotificationCenter.defaultCenter().postNotification(NSNotification(name: "otherLocationLoaded", object: nil))
+            searchedCity = selectedCity
+        }
+        dismissViewControllerAnimated(true, completion: nil)
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         if let cell = searchTableView.dequeueReusableCellWithIdentifier("CityCell", forIndexPath: indexPath) as? CityCell {
-            
-            var city: City!
-            if inSearchMode {
-                city = searchedCities[indexPath.row]
-            } else {
-                city = cities[indexPath.row]
-            }
-            
+            let city = cities[indexPath.row]
             cell.configureCell(city)
             return cell
-            
         } else {
             return CityCell()
         }
-
     }
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
@@ -68,17 +65,20 @@ class SearchLocationVC: UIViewController, UISearchBarDelegate, UITableViewDelega
 
     func searchBar(searchBar: UISearchBar, textDidChange searchText: String) {
         
-        if searchBar.text == nil || searchBar.text == "" {
-            
-            inSearchMode = false
-            view.endEditing(true)
-            searchTableView.reloadData()
-        } else {
-            
-            inSearchMode = true
-            let lower = searchBar.text!.lowercaseString
-            searchedCities = cities.filter({$0.city.rangeOfString(lower) != nil})
-            searchTableView.reloadData()
+        if searchBar.text != nil && searchBar.text != "" {
+            if searchBar.text!.characters.count >= 3 {
+                let input = searchBar.text?.stringByReplacingOccurrencesOfString(" ", withString: "%20")
+                let url = "\(URL_BASE)\(input!.lowercaseString)"
+                Alamofire.request(.GET, url).responseJSON {
+                    response in
+                    let result = response.result
+                    if let cityArray = result.value as? [String] {
+                        self.cities = cityArray
+                        self.searchTableView.reloadData()
+                    }
+                    
+                }
+            }
         }
     }
     
@@ -86,35 +86,9 @@ class SearchLocationVC: UIViewController, UISearchBarDelegate, UITableViewDelega
         dismissViewControllerAnimated(true, completion: nil)
     }
     
-    func parseInCity() {
-        
-        let path = NSBundle.mainBundle().pathForResource("City-State", ofType: "csv")!
-        
-        do {
-            
-            let csv = try CSV(contentsOfURL: path)
-            let rows = csv.rows
-            
-            for row in rows {
-                
-                let city = City(city: row["city"]!, state: row["state"]!, long: Double(row["long"]!)!, lat: Double(row["lat"]!)!)
-                cities.append(city)
-            }
-        } catch let err as NSError {
-            print(err.debugDescription)
-        }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+    func searchBarSearchButtonClicked(searchBar: UISearchBar) {
+        view.endEditing(true)
+    }   
 
 }

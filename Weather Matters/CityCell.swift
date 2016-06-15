@@ -17,8 +17,8 @@ class CityCell: UITableViewCell {
         
     }
     
-    func configureCell(city: City) {
-        cityStateLbl.text = "\(city.city.capitalizedString), \(city.state.capitalizedString)"
+    func configureCell(city: String) {
+        cityStateLbl.text = city
     }
     
 }

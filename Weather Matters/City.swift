@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Alamofire
 
 class City {
     
@@ -14,13 +15,14 @@ class City {
     private var _state: String!
     private var _long: Double!
     private var _lat: Double!
+    private var _loc: String!
+    private var _country: String!
     
-    init(city: String, state: String, long: Double, lat: Double) {
-        
-        self._city = city.lowercaseString
-        self._state = state.lowercaseString
-        self._lat = lat
-        self._long = long
+    init(loc: String) {
+        self._loc = loc
+    }
+    var country: String {
+        return self._country
     }
     
     var city: String {
@@ -37,5 +39,27 @@ class City {
     
     var lat: Double {
         return self._lat
+    }
+    
+    func downloadDetails(completed: downloadComplete) {
+        let url = "\(URL_DETAILS)\(self._loc.stringByReplacingOccurrencesOfString(" ", withString: "%20"))"
+        print(url)
+        Alamofire.request(.GET, url).responseJSON { response in
+            let result = response.result
+            if let dict = result.value as? Dictionary<String, AnyObject> {
+                let city = dict["geobytescity"] as? String!
+                let state = dict["geobytescode"] as? String!
+                let country = dict["geobytescountry"] as? String!
+                let long = dict["geobyteslongitude"] as? String!
+                let lat = dict["geobyteslatitude"] as? String!
+                
+                self._city = city
+                self._state = state
+                self._long = Double(long!)
+                self._lat = Double(lat!)
+                self._country = country
+                completed()
+            }
+        }
     }
 }

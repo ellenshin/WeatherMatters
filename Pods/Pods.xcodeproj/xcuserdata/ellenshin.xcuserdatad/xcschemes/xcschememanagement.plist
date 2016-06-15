@@ -4,12 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>CalendarView-CalendarView.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>CalendarView.xcscheme</key>
+		<key>Alamofire.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -24,20 +19,10 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>SwiftMoment.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>02B32D2C7C35F3A488BFB271BE7CA0A6</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>41638D9B170F774D9F650F63B192526A</key>
+		<key>79C040AFDDCE1BCBF6D8B5EB0B85887F</key>
 		<dict>
 			<key>primary</key>
 			<true/>
@@ -47,12 +32,7 @@
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>A21DCB995841FE970CCB507D94F822D9</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>A249CF9CC83EF996380469C8249B2013</key>
+		<key>C82E394411BC6EFF3ECA9207780ED17E</key>
 		<dict>
 			<key>primary</key>
 			<true/>

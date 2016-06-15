@@ -38,6 +38,7 @@ public class APIClient : NSObject {
     */
     public func getForecast(latitude lat: Double, longitude lon: Double, completion: (forecast: Forecast?, error: NSError?) -> Void) {
         let url = NSURL(string: APIClient.forecastIOURL + apiKey + "/\(lat),\(lon)?units=\(units)")!
+        print(url)
         getForecast(url, completion: completion)
     }
     
